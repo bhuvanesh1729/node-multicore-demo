@@ -16,7 +16,6 @@ function show_help {
   echo "  -p, --port PORT    Set port number [default: 3000]"
   echo "  -d, --docker       Use Docker for deployment"
   echo "  -r, --run          Run the application without full deployment"
-  echo "  -t, --tunnel       Expose application using localtunnel"
   echo "  -n, --nginx        Use nginx as reverse proxy"
   echo "  -h, --help         Show this help message"
   echo ""
@@ -27,7 +26,6 @@ ENV="dev"
 PORT=3000
 USE_DOCKER=false
 RUN_ONLY=false
-USE_TUNNEL=false
 USE_NGINX=false
 
 # Parse arguments
@@ -50,10 +48,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     -r|--run)
       RUN_ONLY=true
-      shift
-      ;;
-    -t|--tunnel)
-      USE_TUNNEL=true
       shift
       ;;
     -n|--nginx)
@@ -238,10 +232,8 @@ function run_npm_project {
   
   echo "Application is running at http://localhost:$PORT"
   
-  # Start localtunnel if requested
-  if [ "$USE_TUNNEL" = true ]; then
-    start_localtunnel
-  fi
+  # Always start localtunnel
+  start_localtunnel
 }
 
 # Configure nginx if requested
@@ -329,10 +321,8 @@ if [ "$USE_DOCKER" = true ]; then
   echo "Deployment completed successfully!"
   echo "Application is running at http://localhost:$PORT"
   
-  # Start localtunnel if requested
-  if [ "$USE_TUNNEL" = true ]; then
-    start_localtunnel
-  fi
+  # Always start localtunnel
+  start_localtunnel
 else
   echo "Using direct Node.js deployment..."
   run_npm_project
