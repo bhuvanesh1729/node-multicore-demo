@@ -6,30 +6,43 @@ This document outlines various methods for deploying the Node Multicore Demo app
 
 ### Development Environment
 ```bash
-curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash
+chmod +x deploy.sh && ./deploy.sh
 ```
 
 ### Production Environment
 ```bash
-curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --env prod
+chmod +x deploy.sh && ./deploy.sh --env prod
 ```
 
 ### Docker Deployment
 ```bash
-curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --docker
+chmod +x deploy.sh && ./deploy.sh --docker
 ```
 
 ### Production Docker Deployment with Custom Port
 ```bash
-curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --env prod --docker --port 8080
+chmod +x deploy.sh && ./deploy.sh --env prod --docker --port 8080
 ```
 
 ### Run Application Only (No Deployment)
 ```bash
-curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --run
+chmod +x deploy.sh && ./deploy.sh --run
 ```
 
 Note: The deploy.sh script will automatically install Docker, Docker Compose, and Node.js if they are not already installed on your system.
+
+### Remote Deployment (After pushing to GitHub)
+
+If you've pushed this project to your GitHub repository, you can use these commands to deploy directly from GitHub:
+
+```bash
+curl -o- https://raw.githubusercontent.com/bhuvanesh1729/node-multicore-demo/main/deploy.sh | bash
+```
+
+```bash
+# With options (e.g., for Docker deployment)
+curl -o- https://raw.githubusercontent.com/bhuvanesh1729/node-multicore-demo/main/deploy.sh | bash -s -- --docker
+```
 
 ## Git Repository Setup
 
