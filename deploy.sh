@@ -210,6 +210,11 @@ function run_npm_project {
   
   # Start the application
   echo "Starting the application..."
+  echo "Application is running at http://localhost:$PORT"
+  
+  # Always start localtunnel before starting the server
+  start_localtunnel
+  
   if [ "$ENV" = "prod" ]; then
     # Use PM2 for production if available
     if command -v pm2 &> /dev/null; then
@@ -229,11 +234,6 @@ function run_npm_project {
       node server.js
     fi
   fi
-  
-  echo "Application is running at http://localhost:$PORT"
-  
-  # Always start localtunnel
-  start_localtunnel
 }
 
 # Configure nginx if requested
@@ -321,12 +321,10 @@ if [ "$USE_DOCKER" = true ]; then
   echo "Deployment completed successfully!"
   echo "Application is running at http://localhost:$PORT"
   
-  # Always start localtunnel
+  # Start localtunnel before running the application
   start_localtunnel
 else
   echo "Using direct Node.js deployment..."
-  run_npm_project
-  
   echo "Deployment completed successfully!"
-  echo "Application is running at http://localhost:$PORT"
+  run_npm_project
 fi
