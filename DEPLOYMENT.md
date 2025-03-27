@@ -2,6 +2,30 @@
 
 This document outlines various methods for deploying the Node Multicore Demo application.
 
+## Quick Start (One-Liner Deployment)
+
+### Development Environment
+```bash
+curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash
+```
+
+### Production Environment
+```bash
+curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --env prod
+```
+
+### Docker Deployment
+```bash
+curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --docker
+```
+
+### Production Docker Deployment with Custom Port
+```bash
+curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --env prod --docker --port 8080
+```
+
+Note: The deploy.sh script will automatically install Docker and Docker Compose if they are not already installed on your system.
+
 ## Git Repository Setup
 
 ### Git Remote Setup Scripts
