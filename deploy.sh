@@ -15,6 +15,7 @@ function show_help {
   echo "  -e, --env ENV      Set environment (dev, staging, prod) [default: dev]"
   echo "  -p, --port PORT    Set port number [default: 3000]"
   echo "  -d, --docker       Use Docker for deployment"
+  echo "  -r, --run          Run the application without full deployment"
   echo "  -h, --help         Show this help message"
   echo ""
 }
@@ -23,6 +24,7 @@ function show_help {
 ENV="dev"
 PORT=3000
 USE_DOCKER=false
+RUN_ONLY=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -42,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       USE_DOCKER=true
       shift
       ;;
+    -r|--run)
+      RUN_ONLY=true
+      shift
+      ;;
     -h|--help)
       show_help
       exit 0
@@ -54,7 +60,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo "Deploying Node Multicore Demo to $ENV environment on port $PORT"
+if [ "$RUN_ONLY" = true ]; then
+  echo "Running Node Multicore Demo in $ENV environment on port $PORT"
+else
+  echo "Deploying Node Multicore Demo to $ENV environment on port $PORT"
+fi
 
 # Create .env file
 echo "Creating .env file..."
@@ -63,6 +73,69 @@ NODE_ENV=$ENV
 PORT=$PORT
 EOF
 
+# Function to run the npm project
+function run_npm_project {
+  # Check if Node.js is installed
+  if ! command -v node &> /dev/null; then
+    echo "Node.js is not installed. Installing Node.js..."
+    
+    # Detect OS
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      # Linux installation
+      echo "Detected Linux OS. Installing Node.js..."
+      curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+      sudo apt-get install -y nodejs
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS installation
+      echo "Detected macOS. Installing Node.js using Homebrew..."
+      if ! command -v brew &> /dev/null; then
+        echo "Homebrew not found. Installing Homebrew first..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      fi
+      brew install node
+    else
+      echo "Unsupported OS for automatic Node.js installation."
+      echo "Please install Node.js manually from https://nodejs.org/"
+      exit 1
+    fi
+  fi
+  
+  # Install dependencies
+  echo "Installing dependencies..."
+  npm ci
+  
+  # Start the application
+  echo "Starting the application..."
+  if [ "$ENV" = "prod" ]; then
+    # Use PM2 for production if available
+    if command -v pm2 &> /dev/null; then
+      echo "Using PM2 for production deployment..."
+      pm2 start server.js --name "node-multicore-demo" -i max
+    else
+      echo "PM2 not found. Using standard Node.js..."
+      nohup node server.js > app.log 2>&1 &
+    fi
+  else
+    # For development, start with nodemon if available
+    if command -v nodemon &> /dev/null; then
+      echo "Using Nodemon for development..."
+      nodemon server.js
+    else
+      echo "Nodemon not found. Using standard Node.js..."
+      node server.js
+    fi
+  fi
+  
+  echo "Application is running at http://localhost:$PORT"
+}
+
+# Run only mode - just start the application
+if [ "$RUN_ONLY" = true ]; then
+  run_npm_project
+  exit 0
+fi
+
+# Full deployment mode
 if [ "$USE_DOCKER" = true ]; then
   echo "Using Docker for deployment..."
   
@@ -137,38 +210,7 @@ if [ "$USE_DOCKER" = true ]; then
   echo "Application is running at http://localhost:$PORT"
 else
   echo "Using direct Node.js deployment..."
-  
-  # Check if Node.js is installed
-  if ! command -v node &> /dev/null; then
-    echo "Node.js is not installed. Please install Node.js first."
-    exit 1
-  fi
-  
-  # Install dependencies
-  echo "Installing dependencies..."
-  npm ci
-  
-  # Start the application
-  echo "Starting the application..."
-  if [ "$ENV" = "prod" ]; then
-    # Use PM2 for production if available
-    if command -v pm2 &> /dev/null; then
-      echo "Using PM2 for production deployment..."
-      pm2 start server.js --name "node-multicore-demo" -i max
-    else
-      echo "PM2 not found. Using standard Node.js..."
-      nohup node server.js > app.log 2>&1 &
-    fi
-  else
-    # For development, start with nodemon if available
-    if command -v nodemon &> /dev/null; then
-      echo "Using Nodemon for development..."
-      nodemon server.js
-    else
-      echo "Nodemon not found. Using standard Node.js..."
-      node server.js
-    fi
-  fi
+  run_npm_project
   
   echo "Deployment completed successfully!"
   echo "Application is running at http://localhost:$PORT"

@@ -24,7 +24,12 @@ curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/dep
 curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --env prod --docker --port 8080
 ```
 
-Note: The deploy.sh script will automatically install Docker and Docker Compose if they are not already installed on your system.
+### Run Application Only (No Deployment)
+```bash
+curl -o- https://raw.githubusercontent.com/username/node-multicore-demo/main/deploy.sh | bash -s -- --run
+```
+
+Note: The deploy.sh script will automatically install Docker, Docker Compose, and Node.js if they are not already installed on your system.
 
 ## Git Repository Setup
 
@@ -167,6 +172,12 @@ chmod +x deploy.sh
 
 # Deploy to production on a custom port using Docker
 ./deploy.sh --env prod --port 8080 --docker
+
+# Run the application without full deployment
+./deploy.sh --run
+
+# Run the application in production mode
+./deploy.sh --run --env prod
 ```
 
 ## Docker Deployment
