@@ -66,16 +66,66 @@ EOF
 if [ "$USE_DOCKER" = true ]; then
   echo "Using Docker for deployment..."
   
-  # Check if Docker is installed
+  # Check if Docker is installed, install if not
   if ! command -v docker &> /dev/null; then
-    echo "Docker is not installed. Please install Docker first."
-    exit 1
+    echo "Docker is not installed. Installing Docker..."
+    
+    # Detect OS
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      # Linux installation
+      echo "Detected Linux OS. Installing Docker..."
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+      sudo apt-get update
+      sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+      sudo systemctl enable docker
+      sudo systemctl start docker
+      sudo usermod -aG docker $USER
+      echo "Docker has been installed successfully."
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS installation
+      echo "Detected macOS. Installing Docker using Homebrew..."
+      if ! command -v brew &> /dev/null; then
+        echo "Homebrew not found. Installing Homebrew first..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      fi
+      brew install --cask docker
+      echo "Docker has been installed. Please start Docker Desktop application."
+      open -a Docker
+      # Wait for Docker to start
+      echo "Waiting for Docker to start..."
+      while ! docker info &>/dev/null; do
+        echo -n "."
+        sleep 2
+      done
+      echo "Docker is now running."
+    else
+      echo "Unsupported OS for automatic Docker installation."
+      echo "Please install Docker manually from https://docs.docker.com/get-docker/"
+      exit 1
+    fi
   fi
   
-  # Check if Docker Compose is installed
+  # Check if Docker Compose is installed, install if not
   if ! command -v docker-compose &> /dev/null; then
-    echo "Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
+    echo "Docker Compose is not installed. Installing Docker Compose..."
+    
+    # Detect OS
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      # Linux installation
+      sudo curl -L "https://github.com/docker/compose/releases/download/v2.18.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      sudo chmod +x /usr/local/bin/docker-compose
+      echo "Docker Compose has been installed successfully."
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS - Docker Compose is included with Docker Desktop
+      echo "Docker Compose is included with Docker Desktop on macOS."
+    else
+      echo "Unsupported OS for automatic Docker Compose installation."
+      echo "Please install Docker Compose manually from https://docs.docker.com/compose/install/"
+      exit 1
+    fi
   fi
   
   # Build and start Docker containers

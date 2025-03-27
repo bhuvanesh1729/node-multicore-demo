@@ -4,9 +4,61 @@ This document outlines various methods for deploying the Node Multicore Demo app
 
 ## Git Repository Setup
 
-### Using git-setup.sh Script
+### Git Remote Setup Scripts
 
-The included `git-setup.sh` script simplifies Git repository setup:
+This project includes several scripts to help with Git repository setup:
+
+#### 1. git-remote-fix.sh (Recommended)
+
+Interactive script with the most features:
+
+```bash
+# Make the script executable
+chmod +x git-remote-fix.sh
+
+# Show help
+./git-remote-fix.sh --help
+
+# Run interactively
+./git-remote-fix.sh
+
+# Specify GitHub username
+./git-remote-fix.sh --username your-github-username
+
+# Use GitHub CLI to create repository
+./git-remote-fix.sh --cli
+
+# Create private repository with GitHub CLI
+./git-remote-fix.sh --cli --private
+```
+
+#### 2. update-remote.sh
+
+Simple script to update remote URL:
+
+```bash
+# Make the script executable
+chmod +x update-remote.sh
+
+# Run the script
+./update-remote.sh
+```
+
+#### 3. fix-remote.sh
+
+Script that uses GitHub CLI to create and push to repository:
+
+```bash
+# Make the script executable
+chmod +x fix-remote.sh
+
+# Run the script (requires GitHub CLI)
+./fix-remote.sh
+```
+
+#### 4. git-setup.sh
+
+General Git setup script:
 
 ```bash
 # Make the script executable
