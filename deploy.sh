@@ -158,6 +158,11 @@ function start_localtunnel {
   echo "Starting localtunnel to expose port $PORT..."
   install_localtunnel
   
+  # Generate a random password for tunnel access
+  TUNNEL_PASSWORD=$(openssl rand -base64 12)
+  echo "TUNNEL_PASSWORD=$TUNNEL_PASSWORD" >> .env
+  echo "🔑 Tunnel password: $TUNNEL_PASSWORD"
+  
   # Start localtunnel in background and capture URL
   lt --port $PORT > .lt_output 2>&1 &
   LT_PID=$!
