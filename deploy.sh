@@ -16,6 +16,8 @@ function show_help {
   echo "  -p, --port PORT    Set port number [default: 3000]"
   echo "  -d, --docker       Use Docker for deployment"
   echo "  -r, --run          Run the application without full deployment"
+  echo "  -t, --tunnel       Expose application using localtunnel"
+  echo "  -n, --nginx        Use nginx as reverse proxy"
   echo "  -h, --help         Show this help message"
   echo ""
 }
@@ -25,6 +27,8 @@ ENV="dev"
 PORT=3000
 USE_DOCKER=false
 RUN_ONLY=false
+USE_TUNNEL=false
+USE_NGINX=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -46,6 +50,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     -r|--run)
       RUN_ONLY=true
+      shift
+      ;;
+    -t|--tunnel)
+      USE_TUNNEL=true
+      shift
+      ;;
+    -n|--nginx)
+      USE_NGINX=true
       shift
       ;;
     -h|--help)
@@ -72,6 +84,104 @@ cat > .env << EOF
 NODE_ENV=$ENV
 PORT=$PORT
 EOF
+
+# Function to install localtunnel
+function install_localtunnel {
+  if ! command -v lt &> /dev/null; then
+    echo "Localtunnel is not installed. Installing localtunnel..."
+    npm install -g localtunnel
+    echo "Localtunnel has been installed successfully."
+  fi
+}
+
+# Function to configure and start nginx
+function configure_nginx {
+  echo "Configuring nginx..."
+  
+  # Check if nginx is installed
+  if ! command -v nginx &> /dev/null; then
+    echo "Nginx is not installed. Installing nginx..."
+    
+    # Detect OS
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      # Linux installation
+      sudo apt-get update
+      sudo apt-get install -y nginx
+      sudo systemctl enable nginx
+      sudo systemctl start nginx
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS installation
+      if ! command -v brew &> /dev/null; then
+        echo "Homebrew not found. Installing Homebrew first..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      fi
+      brew install nginx
+      brew services start nginx
+    else
+      echo "Unsupported OS for automatic nginx installation."
+      echo "Please install nginx manually."
+      return 1
+    fi
+  fi
+  
+  # Update nginx configuration
+  echo "Updating nginx configuration..."
+  NGINX_CONF="server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        proxy_pass http://localhost:$PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}"
+
+  # Detect OS and set nginx config path
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    echo "$NGINX_CONF" | sudo tee /etc/nginx/sites-available/node-multicore-demo > /dev/null
+    sudo ln -sf /etc/nginx/sites-available/node-multicore-demo /etc/nginx/sites-enabled/
+    sudo nginx -t && sudo systemctl reload nginx
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    NGINX_PATH=$(brew --prefix)/etc/nginx
+    echo "$NGINX_CONF" > "$NGINX_PATH/servers/node-multicore-demo.conf"
+    brew services restart nginx
+  else
+    echo "Unsupported OS for nginx configuration."
+    return 1
+  fi
+  
+  echo "Nginx configured successfully."
+}
+
+# Function to start localtunnel
+function start_localtunnel {
+  echo "Starting localtunnel to expose port $PORT..."
+  install_localtunnel
+  
+  # Start localtunnel in background and capture URL
+  lt --port $PORT > .lt_output 2>&1 &
+  LT_PID=$!
+  
+  # Wait for localtunnel to start and extract URL
+  sleep 3
+  if [ -f .lt_output ]; then
+    LT_URL=$(grep -o 'https://[^ ]*' .lt_output | head -1)
+    if [ -n "$LT_URL" ]; then
+      echo "🌐 Your application is publicly available at: $LT_URL"
+      echo "LT_URL=$LT_URL" >> .env
+    else
+      echo "Failed to extract localtunnel URL. Check .lt_output for details."
+    fi
+  else
+    echo "Failed to start localtunnel."
+  fi
+}
 
 # Function to run the npm project
 function run_npm_project {
@@ -102,7 +212,7 @@ function run_npm_project {
   
   # Install dependencies
   echo "Installing dependencies..."
-  npm ci
+  npm install
   
   # Start the application
   echo "Starting the application..."
@@ -127,7 +237,17 @@ function run_npm_project {
   fi
   
   echo "Application is running at http://localhost:$PORT"
+  
+  # Start localtunnel if requested
+  if [ "$USE_TUNNEL" = true ]; then
+    start_localtunnel
+  fi
 }
+
+# Configure nginx if requested
+if [ "$USE_NGINX" = true ]; then
+  configure_nginx
+fi
 
 # Run only mode - just start the application
 if [ "$RUN_ONLY" = true ]; then
@@ -208,6 +328,11 @@ if [ "$USE_DOCKER" = true ]; then
   
   echo "Deployment completed successfully!"
   echo "Application is running at http://localhost:$PORT"
+  
+  # Start localtunnel if requested
+  if [ "$USE_TUNNEL" = true ]; then
+    start_localtunnel
+  fi
 else
   echo "Using direct Node.js deployment..."
   run_npm_project

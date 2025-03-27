@@ -29,7 +29,22 @@ chmod +x deploy.sh && ./deploy.sh --env prod --docker --port 8080
 chmod +x deploy.sh && ./deploy.sh --run
 ```
 
-Note: The deploy.sh script will automatically install Docker, Docker Compose, and Node.js if they are not already installed on your system.
+### Expose Application with Localtunnel
+```bash
+chmod +x deploy.sh && ./deploy.sh --tunnel
+```
+
+### Use Nginx as Reverse Proxy
+```bash
+chmod +x deploy.sh && ./deploy.sh --nginx
+```
+
+### Combined Options Example
+```bash
+chmod +x deploy.sh && ./deploy.sh --env prod --docker --port 8080 --tunnel --nginx
+```
+
+Note: The deploy.sh script will automatically install Docker, Docker Compose, Node.js, Localtunnel, and Nginx if they are not already installed on your system.
 
 ### Remote Deployment (After pushing to GitHub)
 
@@ -191,6 +206,15 @@ chmod +x deploy.sh
 
 # Run the application in production mode
 ./deploy.sh --run --env prod
+
+# Expose the application using localtunnel
+./deploy.sh --tunnel
+
+# Use nginx as a reverse proxy
+./deploy.sh --nginx
+
+# Combined options
+./deploy.sh --env prod --docker --tunnel --nginx
 ```
 
 ## Docker Deployment
